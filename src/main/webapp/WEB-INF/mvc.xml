@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+	http://www.springframework.org/schema/tx  http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+	http://www.springframework.org/schema/aop  http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+	http://www.springframework.org/schema/mvc  http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+	">
+	<!-- 使用context命名空间定义配置文件(properties)的位置 -->
+	<context:property-placeholder location="classpath:/jdbc.properties"/>
+	<!-- 注解扫描器， 定义为扫描cn下所有的注解 (springMVC主打控制层)-->
+	<context:component-scan base-package="cn">
+		<!-- 排除service注解 -->
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+		<!-- 排除Repository注解 -->
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+	</context:component-scan>
+	<!-- 将默认的servlet资源交回给servlet处理 -->
+	<mvc:default-servlet-handler/>
+	<!-- 将springmvc注解的action交给springmvc处理 -->
+	<mvc:annotation-driven>
+		<mvc:message-converters>
+			<!-- 返回字节数组解析成json的消息转换器 -->
+			<bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter">
+	  			<property name="supportedMediaTypes">
+	  				<list>
+	  					<value>text/html</value>
+	  					<value>application/x-www-form-urlencoded</value>
+	  				</list>
+	  			</property>
+	  		</bean>
+			<!-- 返回对象解析成json的消息转换器 -->
+			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+    			<property name="supportedMediaTypes">
+    				<list>
+    					<value>text/html</value>
+    					<value>application/x-www-form-urlencoded</value>
+    				</list>
+    			</property>
+    		</bean>
+		</mvc:message-converters>
+	</mvc:annotation-driven>
+</beans>

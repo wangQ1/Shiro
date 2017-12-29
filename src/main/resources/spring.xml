@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
+	http://www.springframework.org/schema/tx  http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+	http://www.springframework.org/schema/aop  http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+	http://www.springframework.org/schema/mvc  http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+	">
+	<!-- property调用set方法赋值, 没有set方法时应使用 constructor-arg 调用构造方法赋值 -->
+	<!-- spring是bean的容器(service + repository) -->
+	<context:component-scan base-package="cn">
+		<!-- 排除controller注解 -->
+		<context:exclude-filter type="annotation"
+			expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+	<!-- 使用context命名空间定义配置文件(properties)的位置 -->
+	<context:property-placeholder location="classpath:/jdbc.properties" />
+	<!-- 所有数据源 都实现自接口DataSource 常用连接池c3p0 dbcp druid(阿里巴巴 带有监控功能) -->
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+		<property name="url" value="${url}"></property>
+		<property name="driverClassName" value="${driverClassName}"></property>
+		<property name="username" value="${username1}"></property>
+		<property name="password" value="${password}"></property>
+		<!-- 初始生成的连接个数 -->
+		<property name="initialSize" value="1"></property>
+		<!-- 最大生成的连接个数 -->
+		<property name="maxActive" value="200"></property>
+		<!-- 最大的等待人数 -->
+		<property name="maxIdle" value="100"></property>
+		<!-- 开启sql语句统计功能 druid连接池的监控功能需要统计 -->
+		<property name="filters" value="stat"></property>
+	</bean>
+	<!-- 集成mybatis -->
+	<!-- 配置session工厂 -->
+	<bean id="sessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property> <!-- 与连接池关联, 获取session工厂 -->
+	</bean>
+	<bean id="sessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<!-- 通过构造器赋值参数下标为0 与session工厂关联, 获取session -->
+		<constructor-arg index="0" ref="sessionFactory"></constructor-arg>
+	</bean>
+	<!-- 扫描mybatis的映射接口的注解 -->
+	<bean id="scannerConfigurer" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="cn.*..*.mapper"></property><!-- 扫描的包 -->
+	</bean>
+	<!-- 事务管理器 不再使用jdbc的commit和rollback 必须使用事务管理器提供 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<!-- 默认的Web安全管理器 -->
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+		<property name="realm" ref="myRealm"></property>
+	</bean>
+	<!-- 生命周期Bean后置处理器 -->
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor" />
+	<!-- spring配置ini 定义想要连接到后端的Shiro Realm实现 -->
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+		<!-- 自定义跳转 -->
+		<property name="securityManager" ref="securityManager"/>
+		<property name="loginUrl" value="/login.html"/>
+		<property name="successUrl" value="/suc.jsp"/>
+		<property name="unauthorizedUrl" value="/un.html"/>
+		<!-- 引入自定义的过滤器  别名只能使用shiro默认的过滤器名  然后覆盖shiro中的过滤器   参考org.apache.shiro.web.filter.mgt.DefaultFilter  -->
+		<property name="filters">
+			<map>
+				<entry key="authc" value-ref="myFilter"></entry>
+			</map>
+		</property>
+		<property name="filterChainDefinitions">
+			<!-- url判断 -->
+			<value>
+				/** = authc
+			</value>
+		</property>
+	</bean>
+</beans>
